@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="//cdn.socket.io/4.8.1/socket.io.min.js"></script>
+    <script src="//cdn.tailwindcss.com"></script>
+    <title>Python Chatbot</title>
+  </head>
+  <body class="min-w-screen min-h-screen flex justify-center items-center bg-blue-900">
+    <section class="w-full p-4">
+        <div class="flex flex-col gap-2 p-8 mx-auto w-full max-w-[800px] border shadow-sm bg-white">
+            <div class="flex justify-between p-2 items-center">
+                <h1 class="font-bold text-2xl">Python SocketIO Chat</h1>
+                <p class="flex flex-col text-center">
+                    online
+                    <span id="connected" class="w-[50px] h-[50px] p-2 text-center bg-green-500 text-white font-semibold shadow-lg rounded-full"></span>
+                </p>
+            </div>
+            <p class="text-lg">Simple chat forum with python using socketIO</p>
+            <div class="flex flex-col gap-4">
+                <div class="flex flex-col gap-2">
+                    <label for="message">Your message</label>
+                    <textarea name="message" id="message" class="border bg-gray-50 p-4 rounded-sm shadow-sm min-h-[200px]" placeholder="//write your text"></textarea>
+                    <button onclick="sendMessage()" class="bg-blue-500 hover:bg-blue-800 text-white font-semibold rounded-sm p-2">Send</button>
+                </div>
+                <div class="flex flex-col p-6 rounded shadow-lg bg-gray-50 border-2 max-h-[400px] overflow-auto">
+                    <div class="flex justify-between items-center p-2 border-b">
+                        <p class="text-lg font-semibold">Message </p>
+                        <button onclick="clearBox()" class="bg-red-500 hover:bg-red-800 text-white font-semibold rounded-sm p-2">clear</button>
+                    </div>
+                    <div id="msgBox">
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+  <script>
+    // on se connecte au serveur SocketIO
+    try{
+        var client_sio = io.connect("/");
+        client_sio.on('connect', (e) => {
+            console.log("connected");
+        });
+
+        client_sio.on('private', (data) => {
+            if(data){
+                localStorage.setItem('socketID', data);
+            }
+        })
+
+        client_sio.on('message', (data) => {
+            if(data){
+                socketID = localStorage.getItem('socketID');
+                if(socketID == data['sid']){
+                    document.getElementById('msgBox').innerHTML += `<p class='text-lg'><span class='font-semibold text-blue-500'>You: </span>${data['message']}</p>`;
+                }else{
+                    document.getElementById('msgBox').innerHTML += `<p class='text-lg'><span class='font-semibold text-gray-800 border-b'>#${data['sid']}: </span>${data['message']}</p>`;
+                }
+            }
+        })
+
+        client_sio.on('notification_connected', (data) => {
+            if(data){
+                    document.getElementById('connected').innerHTML = data;
+                }
+            }
+        )
+    
+        client_sio.on('connect_error', (e) => {
+            console.error(e);
+        })
+
+        function sendMessage(){
+            message = document.getElementById('message').value.trim();
+            if(message){
+                client_sio.emit('my_message', message);
+                document.getElementById('message').value = "";
+            }else{
+                alert("No message set");
+            }
+        }
+
+        function clearBox(){
+            document.getElementById('msgBox').innerHTML = '';
+        }
+    }catch(err){
+        console.warn(err);
+    }
+
+  </script>
+</html>
